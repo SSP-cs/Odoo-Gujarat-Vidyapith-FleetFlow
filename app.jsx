@@ -1,22 +1,17 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-
 export default function App() {
   const API = "http://localhost:5001";
-
   const [vehicles, setVehicles] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [dashboard, setDashboard] = useState({});
-
   const [vehicleName, setVehicleName] = useState("");
   const [capacity, setCapacity] = useState("");
   const [driverName, setDriverName] = useState("");
-
   const fetchData = async () => {
     const v = await axios.get(API + "/vehicles");
     const d = await axios.get(API + "/drivers");
     const dash = await axios.get(API + "/dashboard");
-
     setVehicles(v.data);
     setDrivers(d.data);
     setDashboard(dash.data);
