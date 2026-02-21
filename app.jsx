@@ -21,39 +21,31 @@ export default function App() {
     setDrivers(d.data);
     setDashboard(dash.data);
   };
-
   useEffect(() => {
     fetchData();
   }, []);
-
   const addVehicle = async () => {
     if (!vehicleName || !capacity) return alert("Enter all vehicle details");
-
     await axios.post(API + "/vehicles", {
       name: vehicleName,
       maxCapacity: Number(capacity)
     });
-
     setVehicleName("");
     setCapacity("");
     fetchData();
   };
-
   const addDriver = async () => {
     if (!driverName) return alert("Enter driver name");
 
     await axios.post(API + "/drivers", {
       name: driverName
     });
-
     setDriverName("");
     fetchData();
   };
-
   return (
     <div style={{ padding: 20 }}>
       <h1>FleetFlow Dashboard</h1>
-
       <h2>Stats</h2>
       <p>Total Vehicles: {dashboard.totalVehicles || 0}</p>
       <p>Active Trips: {dashboard.activeTrips || 0}</p>
