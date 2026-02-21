@@ -9,7 +9,6 @@ let trips = [];
 let vehicleId = 1;
 let driverId = 1;
 let tripId = 1;
-
 /* =============================
    VEHICLES
 ============================= */
