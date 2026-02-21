@@ -1,14 +1,11 @@
 import express from "express";
 import cors from "cors";
-
 const app = express();
 app.use(cors());
 app.use(express.json());
-
 let vehicles = [];
 let drivers = [];
 let trips = [];
-
 let vehicleId = 1;
 let driverId = 1;
 let tripId = 1;
@@ -20,21 +17,17 @@ let tripId = 1;
 app.get("/vehicles", (req, res) => {
   res.json(vehicles);
 });
-
 app.post("/vehicles", (req, res) => {
   const { name, maxCapacity } = req.body;
-
   if (!name || !maxCapacity) {
     return res.status(400).json({ error: "Missing vehicle data" });
   }
-
   const vehicle = {
     id: vehicleId++,
     name,
     maxCapacity,
     status: "AVAILABLE"
   };
-
   vehicles.push(vehicle);
   res.json(vehicle);
 });
@@ -46,7 +39,6 @@ app.post("/vehicles", (req, res) => {
 app.get("/drivers", (req, res) => {
   res.json(drivers);
 });
-
 app.post("/drivers", (req, res) => {
   const { name } = req.body;
 
