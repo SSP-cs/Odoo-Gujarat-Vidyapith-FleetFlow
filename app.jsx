@@ -58,9 +58,7 @@ export default function App() {
       <p>Total Vehicles: {dashboard.totalVehicles || 0}</p>
       <p>Active Trips: {dashboard.activeTrips || 0}</p>
       <p>Available Drivers: {dashboard.availableDrivers || 0}</p>
-
       <hr />
-
       <h2>Add Vehicle</h2>
       <input
         placeholder="Vehicle Name"
@@ -74,7 +72,6 @@ export default function App() {
         onChange={(e) => setCapacity(e.target.value)}
       />
       <button onClick={addVehicle}>Add Vehicle</button>
-
       <h2>Add Driver</h2>
       <input
         placeholder="Driver Name"
@@ -82,16 +79,13 @@ export default function App() {
         onChange={(e) => setDriverName(e.target.value)}
       />
       <button onClick={addDriver}>Add Driver</button>
-
       <hr />
-
       <h2>Vehicles</h2>
       {vehicles.map(v => (
         <div key={v.id}>
           {v.name} - Capacity: {v.maxCapacity} - Status: {v.status}
         </div>
       ))}
-
       <h2>Drivers</h2>
       {drivers.map(d => (
         <div key={d.id}>
