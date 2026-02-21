@@ -1,0 +1,90 @@
+const Database = require('better-sqlite3');
+const path = require('path');
+const DB_PATH = path.join(__dirname, 'fleetflow.db');
+function getDb() {
+  const db = new Database(DB_PATH);
+  db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
+  return db;
+}
+function initDb() {
+  const db = getDb();
+  db.exec(`
+    -- Users table for authentication
+    CREATE TABLE IF NOT EXISTS users (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      name        TEXT    NOT NULL,
+      email       TEXT    NOT NULL UNIQUE,
+      password    TEXT    NOT NULL,
+      role        TEXT    NOT NULL DEFAULT 'Dispatcher',
+      created_at  TEXT    DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS vehicles (
+      id               TEXT PRIMARY KEY,
+      name             TEXT NOT NULL,
+      model            TEXT,
+      plate            TEXT NOT NULL UNIQUE,
+      type             TEXT NOT NULL CHECK(type IN ('Truck','Van','Bike')),
+      capacity_kg      REAL NOT NULL,
+      odometer_km      REAL DEFAULT 0,
+      status           TEXT NOT NULL DEFAULT 'Available'
+                         CHECK(status IN ('Available','On Trip','In Shop','Out of Service')),
+      retired          INTEGER NOT NULL DEFAULT 0,
+      acquisition_cost REAL DEFAULT 0,
+      created_at       TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS drivers (
+      id              TEXT PRIMARY KEY,
+      name            TEXT NOT NULL,
+      license_number  TEXT NOT NULL UNIQUE,
+      license_expiry  TEXT NOT NULL,
+      license_classes TEXT NOT NULL DEFAULT '[]',
+      phone           TEXT,
+      status          TEXT NOT NULL DEFAULT 'On Duty'
+                        CHECK(status IN ('On Duty','Off Duty','Suspended')),
+      safety_score    REAL DEFAULT 85,
+      trips_total     INTEGER DEFAULT 0,
+      trips_completed INTEGER DEFAULT 0,
+      created_at      TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS trips (
+      id           TEXT PRIMARY KEY,
+      vehicle_id   TEXT NOT NULL REFERENCES vehicles(id),
+      driver_id    TEXT NOT NULL REFERENCES drivers(id),
+      origin       TEXT NOT NULL,
+      destination  TEXT NOT NULL,
+      cargo        TEXT,
+      weight_kg    REAL NOT NULL,
+      distance_km  REAL DEFAULT 0,
+      status       TEXT NOT NULL DEFAULT 'Draft'
+                     CHECK(status IN ('Draft','Dispatched','Completed','Cancelled')),
+      created_at   TEXT DEFAULT (datetime('now')),
+      completed_at TEXT
+    );
+    CREATE TABLE IF NOT EXISTS maintenance (
+      id          TEXT PRIMARY KEY,
+      vehicle_id  TEXT NOT NULL REFERENCES vehicles(id),
+      type        TEXT NOT NULL,
+      description TEXT,
+      cost        REAL DEFAULT 0,
+      date        TEXT,
+      status      TEXT NOT NULL DEFAULT 'In Progress'
+                    CHECK(status IN ('In Progress','Done')),
+      created_at  TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS fuel_logs (
+      id              TEXT PRIMARY KEY,
+      vehicle_id      TEXT NOT NULL REFERENCES vehicles(id),
+      trip_id         TEXT REFERENCES trips(id),
+      liters          REAL NOT NULL,
+      cost            REAL NOT NULL,
+      date            TEXT,
+      odometer_after  REAL DEFAULT 0,
+      created_at      TEXT DEFAULT (datetime('now'))
+    );
+  `);
+  console.log(' Database schema initialized at:', DB_PATH);
+  db.close();
+  return DB_PATH;
+}
+module.exports = { getDb, initDb, DB_PATH };
