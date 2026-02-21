@@ -1,53 +1,141 @@
-// server.js — FleetFlow Backend Entry Point
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const { initDb } = require('./database/schema');
+import express from "express";
+import cors from "cors";
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-
-// ── Middleware ─────────────────────────────────────────────────────────────
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
-  credentials: true,
-}));
+app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Request logger (dev)
-app.use((req, _res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
-  next();
+let vehicles = [];
+let drivers = [];
+let trips = [];
+
+let vehicleId = 1;
+let driverId = 1;
+let tripId = 1;
+
+/* =============================
+   VEHICLES
+============================= */
+
+app.get("/vehicles", (req, res) => {
+  res.json(vehicles);
 });
 
-// ── Initialize DB ──────────────────────────────────────────────────────────
-initDb();
+app.post("/vehicles", (req, res) => {
+  const { name, maxCapacity } = req.body;
 
-// ── Routes ─────────────────────────────────────────────────────────────────
-app.use('/api/auth',        require('./routes/auth'));
-app.use('/api/vehicles',    require('./routes/vehicles'));
-app.use('/api/drivers',     require('./routes/drivers'));
-app.use('/api/trips',       require('./routes/trips'));
-app.use('/api/maintenance', require('./routes/maintenance'));
-app.use('/api/fuel',        require('./routes/fuel'));
-app.use('/api/analytics',   require('./routes/analytics'));
+  if (!name || !maxCapacity) {
+    return res.status(400).json({ error: "Missing vehicle data" });
+  }
 
-// Health check
-app.get('/api/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+  const vehicle = {
+    id: vehicleId++,
+    name,
+    maxCapacity,
+    status: "AVAILABLE"
+  };
 
-// 404 fallback
-app.use((_req, res) => res.status(404).json({ error: 'Route not found' }));
-
-// Global error handler
-app.use((err, _req, res, _next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+  vehicles.push(vehicle);
+  res.json(vehicle);
 });
 
-// ── Start ───────────────────────────────────────────────────────────────────
+/* =============================
+   DRIVERS
+============================= */
+
+app.get("/drivers", (req, res) => {
+  res.json(drivers);
+});
+
+app.post("/drivers", (req, res) => {
+  const { name } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ error: "Missing driver name" });
+  }
+
+  const driver = {
+    id: driverId++,
+    name,
+    status: "AVAILABLE"
+  };
+
+  drivers.push(driver);
+  res.json(driver);
+});
+
+/* =============================
+   TRIPS (Dispatch Logic)
+============================= */
+
+app.get("/trips", (req, res) => {
+  res.json(trips);
+});
+
+app.post("/trips", (req, res) => {
+  const { vehicleId: vId, driverId: dId, cargoWeight } = req.body;
+
+  const vehicle = vehicles.find(v => v.id === vId);
+  const driver = drivers.find(d => d.id === dId);
+
+  if (!vehicle || !driver) {
+    return res.status(400).json({ error: "Invalid vehicle or driver" });
+  }
+
+  if (vehicle.status !== "AVAILABLE") {
+    return res.status(400).json({ error: "Vehicle not available" });
+  }
+
+  if (driver.status !== "AVAILABLE") {
+    return res.status(400).json({ error: "Driver not available" });
+  }
+
+  if (cargoWeight > vehicle.maxCapacity) {
+    return res.status(400).json({ error: "Exceeds vehicle capacity" });
+  }
+
+  const trip = {
+    id: tripId++,
+    vehicleId: vId,
+    driverId: dId,
+    cargoWeight,
+    status: "ACTIVE"
+  };
+
+  trips.push(trip);
+
+  vehicle.status = "ON_TRIP";
+  driver.status = "ON_TRIP";
+
+  res.json(trip);
+});
+
+/* =============================
+   DASHBOARD
+============================= */
+
+app.get("/dashboard", (req, res) => {
+  res.json({
+    totalVehicles: vehicles.length,
+    activeTrips: trips.filter(t => t.status === "ACTIVE").length,
+    availableDrivers: drivers.filter(d => d.status === "AVAILABLE").length
+  });
+});
+
+/* =============================
+   SERVER
+============================= */
+
+const PORT = 5001;
+
 app.listen(PORT, () => {
-  console.log(`🚛 FleetFlow backend running on http://localhost:${PORT}`);
-  console.log(`   API base: http://localhost:${PORT}/api`);
-  console.log(`   To seed demo data: npm run seed`);
+  console.log(`Server running on port ${PORT}`);
+});
+
+app.get("/dashboard", (req, res) => {
+  res.json({
+    totalVehicles: vehicles.length,
+    activeTrips: trips.filter(t => t.status === "DISPATCHED").length,
+    availableDrivers: drivers.filter(d => d.status === "AVAILABLE").length
+  });
 });
