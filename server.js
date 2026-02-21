@@ -41,18 +41,15 @@ app.get("/drivers", (req, res) => {
 });
 app.post("/drivers", (req, res) => {
   const { name } = req.body;
-
   if (!name) {
     return res.status(400).json({ error: "Missing driver name" });
   }
-
   const driver = {
     id: driverId++,
     name,
     status: "AVAILABLE"
   };
-
-  drivers.push(driver);
+drivers.push(driver);
   res.json(driver);
 });
 
@@ -63,29 +60,22 @@ app.post("/drivers", (req, res) => {
 app.get("/trips", (req, res) => {
   res.json(trips);
 });
-
 app.post("/trips", (req, res) => {
   const { vehicleId: vId, driverId: dId, cargoWeight } = req.body;
-
   const vehicle = vehicles.find(v => v.id === vId);
   const driver = drivers.find(d => d.id === dId);
-
   if (!vehicle || !driver) {
     return res.status(400).json({ error: "Invalid vehicle or driver" });
   }
-
   if (vehicle.status !== "AVAILABLE") {
     return res.status(400).json({ error: "Vehicle not available" });
   }
-
   if (driver.status !== "AVAILABLE") {
     return res.status(400).json({ error: "Driver not available" });
   }
-
   if (cargoWeight > vehicle.maxCapacity) {
     return res.status(400).json({ error: "Exceeds vehicle capacity" });
   }
-
   const trip = {
     id: tripId++,
     vehicleId: vId,
@@ -93,12 +83,9 @@ app.post("/trips", (req, res) => {
     cargoWeight,
     status: "ACTIVE"
   };
-
   trips.push(trip);
-
   vehicle.status = "ON_TRIP";
   driver.status = "ON_TRIP";
-
   res.json(trip);
 });
 
@@ -119,11 +106,9 @@ app.get("/dashboard", (req, res) => {
 ============================= */
 
 const PORT = 5001;
-
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
 app.get("/dashboard", (req, res) => {
   res.json({
     totalVehicles: vehicles.length,
